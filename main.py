@@ -1,4 +1,4 @@
-"""AksesKita - alat bantu aksesibilitas (Indonesia + English)
+"""SenseBridge - alat bantu aksesibilitas (Indonesia + English)
 
   Tuna Netra   : kamera deteksi hambatan -> peringatan suara + visual
   Tuna Rungu   : mikrofon + bibir -> teks besar di layar, peringatan suara keras
@@ -342,7 +342,7 @@ class DeafPage(BasePage):
         self.hist.configure(state="disabled")
 
     def on_event(self, kind, p):
-        if kind == "level":
+        if kind == "level" and self.on:      # abaikan level yang masih antre setelah Berhenti
             self.vol.set(p)
         elif kind == "speech":
             self.caption.configure(text=p, text_color=C["text"])
@@ -594,7 +594,7 @@ class TrainPage(BasePage):
                               text_color=C["sub"]), "log").pack(
             anchor="w", padx=16, pady=(12, 0))
         self.logbox = ctk.CTkTextbox(lc_, font=app.f_small, fg_color="transparent",
-                                     state="disabled")
+                                     state="disabled", wrap="word")
         self.logbox.pack(fill="both", expand=True, padx=8, pady=(0, 8))
 
         tc = card(right)
@@ -748,7 +748,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         ctk.set_appearance_mode("dark")
-        self.title("AksesKita")
+        self.title("SenseBridge")
         self.geometry("1320x820")
         self.minsize(1180, 740)
         self.configure(fg_color=C["bg"])
@@ -773,6 +773,7 @@ class App(ctk.CTk):
         self.lip.load(self.lang)
 
         self.cap = cv2.VideoCapture(0)
+        self._cam_retry = time.time()
         self.fm = lc.mp_face.FaceMesh(max_num_faces=1, refine_landmarks=True,
                                       min_detection_confidence=0.5,
                                       min_tracking_confidence=0.5)
@@ -804,7 +805,7 @@ class App(ctk.CTk):
         sb = ctk.CTkFrame(self, width=260, corner_radius=0, fg_color=C["side"])
         sb.grid(row=0, column=0, sticky="ns")
         sb.grid_propagate(False)
-        ctk.CTkLabel(sb, text="AksesKita", font=ctk.CTkFont(size=26, weight="bold")
+        ctk.CTkLabel(sb, text="SenseBridge", font=ctk.CTkFont(size=26, weight="bold")
                      ).pack(anchor="w", padx=22, pady=(26, 0))
         self.app_sub = ctk.CTkLabel(sb, text="", font=self.f_small,
                                     text_color=C["sub"])
@@ -894,6 +895,12 @@ class App(ctk.CTk):
                     roi, (x1, y1, x2, y2) = lc.get_mouth_roi(frame, lm)
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (88, 199, 52), 2)
             self.current.on_frame(frame, roi, lm)
+        elif not self.cap.isOpened() and time.time() - self._cam_retry > 3:
+            # kamera belum terbuka (di macOS: izin kamera baru saja diberikan,
+            # atau kamera sedang dipakai aplikasi lain) -> coba buka ulang
+            self._cam_retry = time.time()
+            self.cap.release()
+            self.cap = cv2.VideoCapture(0)
         try:
             while True:
                 kind, payload = self.ui_q.get_nowait()

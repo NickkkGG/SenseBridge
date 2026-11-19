@@ -1,7 +1,12 @@
 """services.py - suara keluar, pengenalan suara, deteksi hambatan, mesin bibir"""
+import os
 import queue
+import subprocess
+import sys
+import tempfile
 import threading
 import time
+import wave
 from collections import deque
 
 import numpy as np
@@ -10,7 +15,28 @@ import lipcore as lc
 
 
 # ============================ SUARA KELUAR ============================
+def _tone_wav(freq, ms):
+    """macOS: file WAV nada sinus (dibuat sekali di folder temp) untuk afplay,
+    pengganti winsound.Beep yang hanya ada di Windows."""
+    path = os.path.join(tempfile.gettempdir(), f"sensebridge_beep_{freq}_{ms}.wav")
+    if not os.path.exists(path):
+        rate = 22050
+        t = np.arange(int(rate * ms / 1000)) / rate
+        pcm = (np.sin(2 * np.pi * freq * t) * 0.6 * 32767).astype("<i2")
+        tmp = f"{path}.{threading.get_ident()}"
+        with wave.open(tmp, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(rate)
+            w.writeframes(pcm.tobytes())
+        os.replace(tmp, path)
+    return path
+
+
 class Speaker:
+    # macOS: suara bawaan untuk perintah `say` (lihat _run_mac)
+    MAC_VOICES = {"id": "Damayanti", "en": "Samantha"}
+
     def __init__(self):
         self.q = queue.Queue()
         threading.Thread(target=self._run, daemon=True).start()
@@ -26,6 +52,8 @@ class Speaker:
         return None
 
     def _run(self):
+        if sys.platform == "darwin":
+            return self._run_mac()
         try:
             import pyttsx3
             engine = pyttsx3.init()
@@ -45,6 +73,21 @@ class Speaker:
             except Exception as e:  # noqa
                 print("TTS error:", e)
 
+    def _run_mac(self):
+        """macOS: pakai perintah `say`. pyttsx3 (driver nsss) di thread ini langsung
+        selesai sebelum suaranya habis, jadi kalimat berikutnya memotong kalimat
+        sebelumnya, dan bahasa Inggris malah dapat suara novelty "Albert"."""
+        while True:
+            text, lang, t = self.q.get()
+            if time.time() - t > 6:      # buang pesan yang sudah basi
+                continue
+            try:
+                # "--" supaya teks yang diawali "-" tidak dibaca sebagai opsi;
+                # kalau suaranya tidak terpasang, `say` memakai suara default
+                subprocess.run(["say", "-v", self.MAC_VOICES[lang], "--", text])
+            except Exception as e:  # noqa
+                print("TTS error:", e)
+
     def say(self, text, lang, interrupt=False):
         if interrupt:
             try:
@@ -60,6 +103,10 @@ class Speaker:
     @staticmethod
     def _beep(level):
         try:
+            if sys.platform == "darwin":     # macOS tidak punya winsound
+                for _ in range(level + 1):
+                    subprocess.run(["afplay", _tone_wav(1800 if level == 2 else 1000, 130)])
+                return
             import winsound
             for _ in range(level + 1):
                 winsound.Beep(1800 if level == 2 else 1000, 130)
@@ -69,6 +116,19 @@ class Speaker:
 
 # ============================ SUARA MASUK ============================
 class SpeechListener:
+    # Mikrofon dibaca lewat sounddevice (PortAudio sudah ikut di paketnya, jadi
+    # tidak perlu pyaudio/Homebrew) per blok 0,1 detik, 16 kHz mono 16-bit:
+    # format yang dipakai _recognize.
+    RATE, BLOCK = 16000, 1600
+    CALIB_BLOCKS = 10        # 1 detik pertama: ukur bising ruangan
+    PREROLL_BLOCKS = 3       # 0,3 detik sebelum suara mulai ikut dikirim
+    PAUSE_BLOCKS = 8         # hening 0,8 detik = kalimat selesai
+    MAX_BLOCKS = 150         # kalimat paling panjang 15 detik
+    MIN_VOICED = 3           # bunyi kurang dari 0,3 detik tidak dikirim ke Google
+    LOUD_DBFS = -12          # lebih keras dari ini = peringatan suara keras
+    ALERT_BLOCKS = 30        # jeda 3 detik antar peringatan (sama dengan banner)
+    NO_AUDIO_BLOCKS = 20     # 2 detik nol digital = izin mikrofon belum ada
+
     def __init__(self, emit, get_lang):
         self.emit, self.get_lang = emit, get_lang
         self._stop = None
@@ -85,25 +145,62 @@ class SpeechListener:
 
     def _run(self, stop):
         try:
-            import pyttsx3
+            import sounddevice as sd
+            import speech_recognition as sr
+            rec = sr.Recognizer()
+            with sd.InputStream(samplerate=self.RATE, blocksize=self.BLOCK,
+                                channels=1, dtype="int16") as stream:
+                self._listen(stream, stop, sr, rec)
         except Exception as e:  # noqa
-            print("Text-to-speech tidak tersedia:", e)
-            return
-        while True:
-            text, lang, t = self.q.get()
-            if time.time() - t > 6:      # buang pesan yang sudah basi
+            self.emit("stt_error", f"mic:{e}")
+
+    def _listen(self, stream, stop, sr, rec):
+        calib, zeros, noise = [], 0, None
+        before = deque(maxlen=self.PREROLL_BLOCKS)
+        phrase, voiced, quiet, cooldown = [], 0, 0, 0
+        while not stop.is_set():
+            block, _ = stream.read(self.BLOCK)
+            if stop.is_set():                    # stop ditekan saat read() menunggu
+                break
+            rms = float(np.sqrt(np.mean(block.astype(np.float32) ** 2)))
+
+            if noise is None:                    # --- kalibrasi bising ruangan
+                if rms == 0:                     # nol digital: izin mikrofon belum ada
+                    zeros += 1
+                    if zeros == self.NO_AUDIO_BLOCKS:
+                        self.emit("stt_error", "mic:" + (
+                            "tidak ada suara masuk, cek izin mikrofon"
+                            if self.get_lang() == "id"
+                            else "no audio coming in, check the microphone permission"))
+                    continue
+                calib.append(rms)
+                if len(calib) == self.CALIB_BLOCKS:
+                    noise = float(np.median(calib))
+                    self.emit("mic", "ready")
                 continue
-            try:
-                engine = pyttsx3.init()
-                vid = self._pick_voice(engine, lang)
-                if vid:
-                    engine.setProperty("voice", vid)
-                engine.say(text)
-                engine.runAndWait()
-                engine.stop()
-                del engine
-            except Exception as e:  # noqa
-                print("TTS error:", e)
+
+            dbfs = 20 * np.log10(max(rms, 1.0) / 32768)
+            self.emit("level", min(1.0, max(0.0, (dbfs + 60) / 60)))
+            cooldown = max(0, cooldown - 1)
+            if dbfs > self.LOUD_DBFS and cooldown == 0:
+                self.emit("alert", round(float(dbfs), 1))
+                cooldown = self.ALERT_BLOCKS
+
+            speaking = rms > max(noise * 3, 300)
+            if phrase:                           # --- sedang merekam satu kalimat
+                phrase.append(block)
+                voiced, quiet = (voiced + 1, 0) if speaking else (voiced, quiet + 1)
+                if quiet >= self.PAUSE_BLOCKS or len(phrase) >= self.MAX_BLOCKS:
+                    if voiced >= self.MIN_VOICED:
+                        raw = np.concatenate(phrase).tobytes()
+                        threading.Thread(target=self._recognize, daemon=True,
+                                         args=(sr, rec, raw, self.get_lang())).start()
+                    phrase, voiced, quiet = [], 0, 0
+            elif speaking:                       # --- kalimat baru dimulai
+                phrase, voiced, quiet = list(before) + [block], 1, 0
+            else:                                # --- hening: ikuti bising ruangan
+                before.append(block)
+                noise = 0.95 * noise + 0.05 * rms
 
     def _recognize(self, sr, rec, raw, lang):
         try:

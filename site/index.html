@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SenseBridge</title>
+<meta name="description" content="SenseBridge is a desktop assistant for students with disabilities: obstacles become spoken warnings, speech becomes large captions, and lips or typing become a voice.">
+<meta name="theme-color" content="#0E1016">
+<meta property="og:title" content="SenseBridge">
+<meta property="og:description" content="One sense in, another sense out. A camera-and-microphone assistant for students with disabilities.">
+<meta property="og:type" content="website">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Atkinson+Hyperlegible+Mono:wght@400;600&display=swap">
+<script>
+  try {
+    var t = localStorage.getItem("sb-theme"), s = localStorage.getItem("sb-size");
+    if (t) document.documentElement.dataset.theme = t;
+    if (s) document.documentElement.dataset.size = s;
+  } catch (e) {}
+</script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0E1016; --surface: #161A25; --text: #F2F4F8; --text-2: #C3C8D6;
+    --rule: #2C3142; --station: #0E1016; --river: #12233A; --wave: #22416A;
+    --netra: #FF8A3D; --rungu: #4F8CFF; --wicara: #9B72FA; --latih: #2ECC71;
+    --mono: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #F5F2EA; --surface: #EAE6DB; --text: #16181D; --text-2: #3B404C;
+      --rule: #D3CEC1; --station: #F5F2EA; --river: #D6E4F2; --wave: #A9C4E0;
+      --netra: #C85A12; --rungu: #2459D6; --wicara: #6D3FD6; --latih: #17803F;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #F5F2EA; --surface: #EAE6DB; --text: #16181D; --text-2: #3B404C;
+    --rule: #D3CEC1; --station: #F5F2EA; --river: #D6E4F2; --wave: #A9C4E0;
+    --netra: #C85A12; --rungu: #2459D6; --wicara: #6D3FD6; --latih: #17803F;
+  }
+  :root[data-size="large"] { font-size: 125%; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Atkinson Hyperlegible", system-ui, sans-serif;
+    font-size: 1.125rem; line-height: 1.55;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--rungu); outline-offset: 3px; border-radius: .3rem; }
+  code { font-family: var(--mono); font-size: .9em; background: var(--surface); padding: .08em .35em; border-radius: .3rem; }
+  .wrap { max-width: 72rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  .skip { position: absolute; left: -999rem; top: .5rem; background: var(--text); color: var(--bg); padding: .5rem .9rem; border-radius: .4rem; z-index: 10; }
+  .skip:focus { left: .75rem; }
+
+  /* header: brand + the same two switches the app has in its sidebar */
+  .top { border-bottom: 2px solid var(--text); }
+  .top-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1.5rem; padding-top: .8rem; padding-bottom: .8rem; }
+  .brand { display: inline-flex; align-items: center; gap: .6rem; font-weight: 700; font-size: 1.3rem; text-decoration: none; }
+  .brand svg { width: 2rem; height: 2rem; }
+  .switches { display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; }
+  .switch { display: inline-flex; align-items: center; gap: .6rem; background: none; border: 0; color: var(--text); font: inherit; font-size: 1rem; cursor: pointer; padding: .35rem .15rem; }
+  .switch .track { position: relative; flex: none; width: 2.7rem; height: 1.5rem; border-radius: 1rem; background: var(--rule); transition: background .2s; }
+  .switch .track::after { content: ""; position: absolute; top: .22rem; left: .22rem; width: 1.06rem; height: 1.06rem; border-radius: 50%; background: var(--text); transition: transform .2s; }
+  .switch[aria-checked="true"] .track { background: var(--rungu); }
+  .switch[aria-checked="true"] .track::after { transform: translateX(1.2rem); background: #fff; }
+
+  /* hero */
+  .hero { display: grid; gap: 2.5rem; padding-top: 3.5rem; padding-bottom: 2.5rem; }
+  @media (min-width: 56rem) { .hero { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); align-items: end; } }
+  h1 { font-size: clamp(2.6rem, 6.4vw, 4.7rem); line-height: 1.02; letter-spacing: -.01em; margin: 0 0 1.4rem; }
+  .lede { font-size: 1.3rem; max-width: 36rem; margin: 0; }
+  .board { margin: 0; border-top: 2px solid var(--text); }
+  .board div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--rule); }
+  .board dt { font-weight: 700; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; padding-top: .2rem; }
+  .board dd { margin: 0; font-family: var(--mono); font-size: 1rem; }
+
+  /* the line map */
+  .map { margin-top: 0; margin-bottom: 0; }
+  .map svg { display: block; width: 100%; height: auto; background: var(--surface); border-radius: .75rem; }
+  .map figcaption { margin-top: .8rem; color: var(--text-2); font-size: 1rem; }
+  .river { fill: var(--river); }
+  .waves path { fill: none; stroke: var(--wave); stroke-width: 3; stroke-linecap: round; }
+  .deck path { fill: none; stroke: var(--text-2); stroke-width: 4; stroke-linecap: round; }
+  .ln { fill: none; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
+  .ln.netra { stroke: var(--netra); } .ln.rungu { stroke: var(--rungu); }
+  .ln.wicara { stroke: var(--wicara); } .ln.latih { stroke: var(--latih); }
+  .signals circle { fill: var(--text); }
+  .stations circle { fill: var(--station); stroke: var(--text); stroke-width: 5; }
+  .map-label text { fill: var(--text); font-size: 22px; }
+  .map-label text.end { text-anchor: end; }
+  .map-label .mode { font-size: 16px; font-weight: 700; letter-spacing: .08em; }
+  .map-label .mode.netra { fill: var(--netra); } .map-label .mode.rungu { fill: var(--rungu); }
+  .map-label .mode.wicara { fill: var(--wicara); } .map-label .mode.latih { fill: var(--latih); }
+  @media (max-width: 44rem) { .map-label { display: none; } }
+
+  /* sections */
+  .block { padding-top: 4.5rem; }
+  h2 { font-size: clamp(1.8rem, 3.4vw, 2.5rem); line-height: 1.1; margin: 0 0 .6rem; padding-top: 1rem; border-top: 2px solid var(--text); }
+  .intro { margin: 0; max-width: 40rem; }
+
+  /* routes: each page of the app drawn as one line with its stops */
+  .routes { display: grid; gap: 3rem 2.5rem; margin-top: 2.2rem; }
+  @media (min-width: 40rem) { .routes { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 72rem) { .routes { grid-template-columns: repeat(4, 1fr); } }
+  .route h3 { margin: 0; font-size: 1.6rem; line-height: 1.15; color: var(--c); }
+  .route .gloss { margin: .2rem 0 0; color: var(--text-2); font-size: 1rem; }
+  .stops { list-style: none; margin: 1.4rem 0 0; padding: 0 0 0 2.4rem; }
+  .stops li { position: relative; margin: 0 0 1.15rem; }
+  .stops li::before { content: ""; position: absolute; z-index: 1; left: -2.15rem; top: .3rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--station); border: .22rem solid var(--text); }
+  .stops li:not(:last-child)::after { content: ""; position: absolute; left: -1.9rem; top: .85rem; bottom: -2rem; width: .6rem; background: var(--c); }
+  .stops li.end { margin-bottom: 0; }
+  .stops li.end::before { left: -2.35rem; top: .1rem; width: 1.5rem; height: 1.5rem; border-width: .3rem; }
+  .end-tag { display: block; font-size: .85rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c); }
+  .end q, .end .caption { display: block; font-size: 1.35rem; font-weight: 700; line-height: 1.25; margin: .15rem 0 .35rem; }
+  .end .caption { font-size: 1.5rem; }
+  .end .phrases { display: block; font-weight: 700; margin: .15rem 0 .35rem; }
+  .end .file { display: inline-block; margin: .3rem 0 .4rem; font-size: 1rem; }
+  .end .trans { display: block; color: var(--text-2); font-size: 1rem; }
+
+  /* notes */
+  .notes { list-style: none; padding: 0; margin: 1.6rem 0 0; display: grid; gap: 1.1rem 2.5rem; }
+  @media (min-width: 56rem) { .notes { grid-template-columns: 1fr 1fr; } }
+  .notes li { padding: .2rem 0 .2rem 1.1rem; border-left: .35rem solid var(--text); }
+
+  /* run */
+  #run p { max-width: 44rem; }
+  pre { margin: 1.1rem 0; padding: 1.1rem 1.25rem; background: var(--surface); border-radius: .6rem; overflow-x: auto; font-size: .95rem; line-height: 1.6; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  .foot { margin-top: 5rem; padding-top: 1.2rem; padding-bottom: 3rem; border-top: 2px solid var(--text); color: var(--text-2); font-size: 1rem; }
+  .foot p { margin: 0; max-width: 46rem; }
+
+  @media (max-width: 40rem) { .wrap { padding-left: 1rem; padding-right: 1rem; } .lede { font-size: 1.15rem; } }
+  @media (prefers-reduced-motion: reduce) {
+    .signals { display: none; }
+    .switch .track, .switch .track::after { transition: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="#main">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><g fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h6l4.5 4.5H29" stroke="var(--netra)"/><path d="M3 16h26" stroke="var(--rungu)"/><path d="M3 24.5h6l4.5-4.5H29" stroke="var(--wicara)"/></g></svg>
+      SenseBridge
+    </a>
+    <div class="switches" role="group" aria-label="Display">
+      <button class="switch" id="t-large" type="button" role="switch" aria-checked="false"><span class="track" aria-hidden="true"></span>Large text</button>
+      <button class="switch" id="t-dark" type="button" role="switch" aria-checked="true"><span class="track" aria-hidden="true"></span>Dark mode</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero wrap">
+    <div>
+      <h1>One sense in,<br>another sense out.</h1>
+      <p class="lede">SenseBridge watches and listens through a laptop's camera and microphone, then answers in the sense a student can use: a warning they can hear, captions they can read, and a voice for what they want to say.</p>
+    </div>
+    <dl class="board" aria-label="At a glance">
+      <div><dt>Runs on</dt><dd>A laptop with a webcam</dd></div>
+      <div><dt>Speaks</dt><dd>Bahasa Indonesia, English</dd></div>
+      <div><dt>Built with</dt><dd>Python, CustomTkinter, OpenCV, MediaPipe, PyTorch, YOLOv8</dd></div>
+      <div><dt>Started as</dt><dd>AksesKita, by Farid</dd></div>
+    </dl>
+  </section>
+
+  <figure class="map wrap">
+    <svg viewBox="0 0 1000 480" role="img" aria-labelledby="map-t map-d">
+      <title id="map-t">The SenseBridge line map</title>
+      <desc id="map-d">Four colored lines cross a river on one bridge. Tuna Netra runs from what the camera sees to a warning you hear. Tuna Rungu runs from speech the microphone hears to captions you read. Tuna Wicara runs from moving lips or typing to a voice others hear. Latih Model runs from your recordings to your own lip model.</desc>
+      <rect class="river" x="470" y="0" width="100" height="480"/>
+      <g class="waves">
+        <path d="M482 40q9-7 18 0t18 0t18 0t18 0"/>
+        <path d="M482 112q9-7 18 0t18 0t18 0t18 0"/>
+        <path d="M482 352q9-7 18 0t18 0t18 0t18 0"/>
+        <path d="M482 430q9-7 18 0t18 0t18 0t18 0"/>
+      </g>
+      <g class="deck">
+        <path d="M446 180H594M446 280H594"/>
+        <path d="M480 280V308M560 280V308"/>
+      </g>
+      <g class="lines">
+        <path id="l-netra" class="ln netra" d="M80 80H320L440 200H600L720 80H920"/>
+        <path id="l-rungu" class="ln rungu" d="M80 200H420L440 220H600L620 200H920"/>
+        <path id="l-wicara" class="ln wicara" d="M80 320H360L440 240H600L680 320H920"/>
+        <path id="l-latih" class="ln latih" d="M80 420H280L440 260H600L760 420H920"/>
+      </g>
+      <g class="signals">
+        <circle r="5"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#l-netra"/></animateMotion></circle>
+        <circle r="5"><animateMotion dur="8s" begin="2s" repeatCount="indefinite"><mpath href="#l-rungu"/></animateMotion></circle>
+        <circle r="5"><animateMotion dur="8s" begin="4s" repeatCount="indefinite"><mpath href="#l-wicara"/></animateMotion></circle>
+        <circle r="5"><animateMotion dur="8s" begin="6s" repeatCount="indefinite"><mpath href="#l-latih"/></animateMotion></circle>
+      </g>
+      <g class="stations">
+        <circle cx="80" cy="80" r="12"/><circle cx="920" cy="80" r="12"/>
+        <circle cx="80" cy="200" r="12"/><circle cx="920" cy="200" r="12"/>
+        <circle cx="80" cy="320" r="12"/><circle cx="920" cy="320" r="12"/>
+        <circle cx="80" cy="420" r="12"/><circle cx="920" cy="420" r="12"/>
+      </g>
+      <g class="map-label" aria-hidden="true">
+        <text x="64" y="50">Camera sees the way</text>
+        <text class="mode netra" x="64" y="113">TUNA NETRA</text>
+        <text x="64" y="170">Microphone hears speech</text>
+        <text class="mode rungu" x="64" y="233">TUNA RUNGU</text>
+        <text x="64" y="290">Lips move, keys type</text>
+        <text class="mode wicara" x="64" y="353">TUNA WICARA</text>
+        <text x="64" y="394">You record a word</text>
+        <text class="mode latih" x="64" y="453">LATIH MODEL</text>
+        <text class="end" x="936" y="50">You hear a warning</text>
+        <text class="end" x="936" y="170">You read big captions</text>
+        <text class="end" x="936" y="290">Others hear your words</text>
+        <text class="end" x="936" y="458">Your own lip model</text>
+      </g>
+    </svg>
+    <figcaption>Four lines cross one bridge. Each starts with what the laptop senses and ends with what the student can use.</figcaption>
+  </figure>
+
+  <section class="wrap block" aria-labelledby="lines-h">
+    <h2 id="lines-h">The four lines</h2>
+    <p class="intro">Each page of the app is one line.</p>
+    <div class="routes">
+      <article class="route" style="--c: var(--netra)">
+        <h3 lang="id">Tuna Netra</h3>
+        <p class="gloss">For blind and low-vision students</p>
+        <ol class="stops">
+          <li>The camera looks ahead</li>
+          <li>YOLOv8n finds people, chairs, tables, vehicles and other everyday objects</li>
+          <li>Box height estimates the distance; box position gives left, ahead or right</li>
+          <li class="end"><span class="end-tag">You hear</span><q lang="id">Awas! orang sangat dekat di kanan</q><span class="trans">“Watch out, a person very close on your right,” then a beep</span></li>
+        </ol>
+      </article>
+      <article class="route" style="--c: var(--rungu)">
+        <h3 lang="id">Tuna Rungu</h3>
+        <p class="gloss">For Deaf and hard-of-hearing students</p>
+        <ol class="stops">
+          <li>The microphone learns the room's noise for one second</li>
+          <li>Speech is cut into sentences at each pause</li>
+          <li>Google Speech turns every sentence into text</li>
+          <li class="end"><span class="end-tag">You read</span><span class="caption" lang="id">Halo apa kabar, saya butuh bantuan</span><span class="trans">Large live captions with a history. Loud sounds flash an alert.</span></li>
+        </ol>
+      </article>
+      <article class="route" style="--c: var(--wicara)">
+        <h3 lang="id">Tuna Wicara</h3>
+        <p class="gloss">For students with speech impairments</p>
+        <ol class="stops">
+          <li>Lips in front of the camera, or the keyboard</li>
+          <li>MediaPipe finds the mouth and your lip model names the word</li>
+          <li>Words gather in the message box, next to quick phrases</li>
+          <li class="end"><span class="end-tag">Others hear</span><span class="phrases" lang="id">Halo / Terima kasih / Tolong / Saya butuh bantuan</span><span class="trans">Read aloud by the computer voice</span></li>
+        </ol>
+      </article>
+      <article class="route" style="--c: var(--latih)">
+        <h3 lang="id">Latih Model</h3>
+        <p class="gloss">Teaches the app your lips</p>
+        <ol class="stops">
+          <li>Record about 30 one-second clips of each word, plus <code>_diam</code> for a closed mouth</li>
+          <li>Every clip is 24 frames of a 48 × 48 mouth crop</li>
+          <li>A 3D CNN with a GRU learns them, with tempo, position and light shuffled</li>
+          <li class="end"><span class="end-tag">You get</span><code class="file">models/lip_id.pt</code><span class="trans">Your own lip model, used by Tuna Rungu and Tuna Wicara</span></li>
+        </ol>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap block" aria-labelledby="notes-h">
+    <h2 id="notes-h">Before you rely on it</h2>
+    <ul class="notes">
+      <li><strong>An extra aid.</strong> Not a replacement for a cane or a guide. Distance is an estimate, and stairs, holes and glass are not detected.</li>
+      <li><strong>Lip reading is personal.</strong> It knows only the words you recorded and works best for the person who recorded them.</li>
+      <li><strong>Captions need the internet.</strong> Speech goes to Google Speech to become text.</li>
+      <li><strong>Faces stay on the laptop.</strong> Recordings and trained models are never uploaded with the code.</li>
+    </ul>
+  </section>
+
+  <section class="wrap block" id="run" aria-labelledby="run-h">
+    <h2 id="run-h">Run it</h2>
+    <p>You need a laptop with a webcam and Python 3.11 or 3.12. Inside the project folder:</p>
+    <pre><code>python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python main.py</code></pre>
+    <p>On Windows, use <code>.venv\Scripts\python</code> instead. The code lives in a private GitHub repository for now.</p>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>SenseBridge started as AksesKita, built by Farid. Mac support, the microphone page, lip-model training and tests by Nick. 2026.</p>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var large = document.getElementById("t-large"), dark = document.getElementById("t-dark");
+    function save(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+    function isDark() {
+      var theme = root.dataset.theme;
+      if (theme) return theme === "dark";
+      return !window.matchMedia("(prefers-color-scheme: light)").matches;
+    }
+    function sync() {
+      dark.setAttribute("aria-checked", String(isDark()));
+      large.setAttribute("aria-checked", String(root.dataset.size === "large"));
+    }
+    dark.addEventListener("click", function () {
+      root.dataset.theme = isDark() ? "light" : "dark";
+      save("sb-theme", root.dataset.theme);
+      sync();
+    });
+    large.addEventListener("click", function () {
+      if (root.dataset.size === "large") { delete root.dataset.size; save("sb-size", ""); }
+      else { root.dataset.size = "large"; save("sb-size", "large"); }
+      sync();
+    });
+    window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", sync);
+    sync();
+  })();
+</script>
+</body>
+</html>

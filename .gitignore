@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Rekaman bibir dan model hasil latihan berisi wajah pengguna: jangan di-upload
+dataset/
+models/
+
+# Sistem dan alat
+.DS_Store
+.vercel/
+.env*

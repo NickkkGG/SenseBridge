@@ -1,4 +1,4 @@
-"""Launcher AksesKita: cek Python, file, dan library sebelum menjalankan main.py"""
+"""Launcher SenseBridge: cek Python, file, dan library sebelum menjalankan main.py"""
 import importlib.util
 import os
 import subprocess
@@ -76,7 +76,7 @@ def main():
     check_python()
     check_files()
     check_packages()
-    print("\nMenjalankan AksesKita...\n")
+    print("\nMenjalankan SenseBridge...\n")
     import runpy
     runpy.run_path(os.path.join(HERE, "main.py"), run_name="__main__")
 
