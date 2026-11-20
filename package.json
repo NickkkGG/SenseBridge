@@ -1,0 +1,8 @@
+{
+  "name": "sensebridge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:web": "node --test \"tests/web/*.test.mjs\""
+  }
+}

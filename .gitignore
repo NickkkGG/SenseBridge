@@ -12,3 +12,6 @@ models/
 .DS_Store
 .vercel/
 .env*
+
+# Node
+node_modules/
