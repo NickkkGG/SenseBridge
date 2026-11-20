@@ -1,8 +1,11 @@
-// Line 4: page frame only for now; its body comes with its own task.
-import { basePage, applyText } from "../ui.js";
+// Line 4, Latih Model: placeholder until lip recording and training come to
+// the browser in stage 2.
+import { basePage, applyText, h } from "../ui.js";
 
 export function createPage(ctx) {
-  const { el } = basePage({ line: "latih", num: 4, titleKey: "latih_title", subKey: "latih_sub" });
-  applyText(el, ctx.t);
-  return { el, show() {}, hide() {}, setLang() { applyText(el, ctx.t); } };
+  const { el, body } = basePage({ line: "latih", num: 4, titleKey: "latih_title", subKey: "latih_sub" });
+  body.append(h("p", { class: "note", "data-t": "latih_soon" }));
+  const setLang = () => applyText(el, ctx.t);
+  setLang();
+  return { el, show() {}, hide() {}, setLang };
 }
