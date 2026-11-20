@@ -7,7 +7,13 @@ Sudah disiapkan dan dites di MacBook Pro M1 Pro (macOS 27.2) dengan Python 3.12 
 Tanpa Python: buka https://sensebridge-omega.vercel.app di Chrome, Edge, atau Safari (HP atau laptop), pilih jalur, lalu izinkan kamera atau mikrofon. Tuna Netra, Tuna Rungu, dan Tuna Wicara (ketik dan kalimat cepat) sudah jalan di browser. Baca bibir dan Latih Model masih lewat aplikasi Python di bawah.
 
 - Kodenya di `site/` (HTML, CSS, dan JavaScript biasa, tanpa build). Tesnya: `node --test "tests/web/*.test.mjs"`.
-- Upload versi baru: dari folder `site/`, jalankan `npx --yes vercel@latest deploy --prod --yes`, lalu hapus `site/.env.local` kalau file itu muncul (isinya token Vercel).
+- Upload versi baru: Vercel menolak deploy dari dalam repo ini (penulis commit bukan anggota tim Vercel), jadi deploy salinan `site/` dari luar repo. Jalankan dari folder project:
+
+  ```bash
+  rm -rf /tmp/sensebridge-site && cp -R site /tmp/sensebridge-site && (cd /tmp/sensebridge-site && npx --yes vercel@latest deploy --prod --yes); rm -rf /tmp/sensebridge-site
+  ```
+
+  Kalau muncul file `.env.local` (isinya token Vercel), hapus.
 
 ## Jalankan dari VSCode
 

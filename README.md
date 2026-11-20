@@ -18,7 +18,11 @@ Open https://sensebridge-omega.vercel.app on a phone or a laptop, pick a line an
 - Browsers: Chrome, Edge or Safari. Firefox has no speech recognition, so it shows no captions; its loud-sound alert still works.
 - Camera images and microphone sound are used on the device and never stored. Obstacles are found in the browser by MediaPipe's EfficientDet-Lite0 model (about 18 MB with its runtime, downloaded once). Captions come from the browser's own speech recognition, which sends the speech to Google (Chrome), Microsoft (Edge) or Apple (Safari), so they need the internet.
 - The project page is at https://sensebridge-omega.vercel.app/about/.
-- Source: [`site/`](site/), plain HTML, CSS and JavaScript modules with no build step. To publish a new version, run `npx --yes vercel@latest deploy --prod --yes` inside `site/`.
+- Source: [`site/`](site/), plain HTML, CSS and JavaScript modules with no build step. To publish a new version, deploy a copy of `site/` from outside this repository. Vercel blocks deploys made inside it because the commit author is not a member of the Vercel team. From the project folder:
+
+  ```bash
+  rm -rf /tmp/sensebridge-site && cp -R site /tmp/sensebridge-site && (cd /tmp/sensebridge-site && npx --yes vercel@latest deploy --prod --yes); rm -rf /tmp/sensebridge-site
+  ```
 
 ## Desktop app (Python)
 
