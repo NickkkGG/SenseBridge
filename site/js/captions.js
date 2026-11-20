@@ -98,7 +98,8 @@ export class CaptionController {
       if (!current() || !this.active) return;
       const wait = this.retryDelay;
       this.retryDelay = 0;
-      this.schedule(() => {
+      const schedule = this.schedule;   // unbound: the browser's setTimeout refuses another `this`
+      schedule(() => {
         if (current() && this.active) this.begin(rec);
       }, wait);
     };

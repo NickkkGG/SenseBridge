@@ -63,3 +63,12 @@ test("finds the prefixed constructor and reports none in Firefox", () => {
   assert.equal(getRecognitionCtor({ webkitSpeechRecognition: FakeRec }), FakeRec);
   assert.equal(getRecognitionCtor({}), null);
 });
+test("restarts with the browser's setTimeout, which must not be called as a method", () => {
+  function strictSchedule(fn) {
+    if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation");
+    fn();
+  }
+  const { c } = make({ schedule: strictSchedule }); c.start(); const r = FakeRec.last;
+  r.onend();
+  assert.equal(r.starts, 2);
+});

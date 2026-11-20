@@ -8,6 +8,7 @@
   --netra: #FF8A3D; --rungu: #4F8CFF; --wicara: #9B72FA; --latih: #2ECC71;
   --on-line: #0E1016;
   --ok: #2ECC71; --warn: #F5A623; --bad: #FF4D4F; --on-signal: #0E1016;
+  --bad-text: #FF4D4F;
   --mono: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: light) {
@@ -16,7 +17,7 @@
     --bg: #F5F2EA; --surface: #EAE6DB; --text: #16181D; --text-2: #3B404C;
     --rule: #D3CEC1;
     --netra: #C85A12; --rungu: #2459D6; --wicara: #6D3FD6; --latih: #17803F;
-    --on-line: #FFFFFF;
+    --on-line: #FFFFFF; --bad-text: #B3261E;
   }
 }
 :root[data-theme="light"] {
@@ -24,7 +25,7 @@
   --bg: #F5F2EA; --surface: #EAE6DB; --text: #16181D; --text-2: #3B404C;
   --rule: #D3CEC1;
   --netra: #C85A12; --rungu: #2459D6; --wicara: #6D3FD6; --latih: #17803F;
-  --on-line: #FFFFFF;
+  --on-line: #FFFFFF; --bad-text: #B3261E;
 }
 :root[data-size="large"] { font-size: 125%; }
 
@@ -97,7 +98,7 @@ button { cursor: pointer; }
 .plain:hover { background: color-mix(in srgb, var(--text) 10%, transparent); }
 .note { margin: 1.4rem 0 0; padding: .15rem 0 .15rem 1rem; border-left: .35rem solid var(--text); font-size: 1rem; max-width: 40rem; }
 .status { margin: .7rem 0 0; font-weight: 700; min-height: 1.5em; }
-.status.bad { color: var(--bad); }
+.status.bad { color: var(--bad-text); }
 .status:empty { min-height: 0; margin: 0; }
 
 /* options under the main button */

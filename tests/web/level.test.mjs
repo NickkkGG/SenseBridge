@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rms, dbfs, levelFromDbfs, LoudAlert } from "../../site/js/level.js";
+import { rms, dbfs, levelFromDbfs, LoudAlert, meterTiming } from "../../site/js/level.js";
 
 test("rms and dBFS match the Python listener", () => {
   assert.equal(rms(new Float32Array([0.5, -0.5])), 0.5);
@@ -21,4 +21,9 @@ test("loud alert above -12 dBFS with a 3 s cooldown", () => {
   assert.equal(a.check(-11, 0.5), true);
   assert.equal(a.check(-5, 3.49), false);
   assert.equal(a.check(-5, 3.5), true);
+});
+test("the meter reads every sample: its window spans the whole interval, about 100 ms like the Python blocks", () => {
+  assert.deepEqual(meterTiming(48000), { fftSize: 4096, intervalMs: 85 });
+  assert.deepEqual(meterTiming(44100), { fftSize: 4096, intervalMs: 92 });
+  assert.deepEqual(meterTiming(16000), { fftSize: 1024, intervalMs: 64 });
 });

@@ -1,7 +1,7 @@
 // Line 1, Tuna Netra: the camera looks ahead; close obstacles become a big
 // status board, spoken warnings and beeps (port of Farid's BlindPage).
 import { basePage, applyText, h, switchButton } from "../ui.js";
-import { openCamera, shouldMirror, stopStream, mediaErrorKey } from "../media.js";
+import { openCamera, shouldMirror, stopStream, mediaErrorKey, keepScreenOn } from "../media.js";
 import { assess, heightLevel, AlertGate, fromMediaPipe } from "../obstacles.js";
 import { NAMES_ID } from "../i18n.js";
 import { createObjectDetector } from "../vision.js";
@@ -61,6 +61,7 @@ export function createPage(ctx) {
   let running = false;         // between Start and Stop (the camera may still be opening)
   let stream = null, raf = 0, lastDetect = 0, mirror = false, gate = new AlertGate();
   let idleKey = "idle", errorKey = null, shown = "", colors = null;
+  let detectorLoaded = false, wake = null;
 
   function setBoard(level, text) {
     const key = `${level}|${text}`;
@@ -89,6 +90,7 @@ export function createPage(ctx) {
   function setError(key) {
     errorKey = key;
     status.textContent = key ? ctx.t(key) : "";
+    if (key && voiceOn) ctx.speaker.say(ctx.t(key), ctx.lang(), { interrupt: true });
   }
 
   function renderButton() {
@@ -158,7 +160,7 @@ export function createPage(ctx) {
     renderButton();
     setError(null);
     ctx.unlockAudio();
-    if (voiceOn) ctx.speaker.say(ctx.t("netra_started"), ctx.lang());
+    wake = keepScreenOn(navigator, document);
 
     let s;
     try {
@@ -181,6 +183,8 @@ export function createPage(ctx) {
     video.hidden = false;
     canvas.hidden = false;
     showIdle("loading_model");
+    // The first load downloads about 18 MB: say so, or silence would sound like a clear path.
+    if (voiceOn && !detectorLoaded) ctx.speaker.say(ctx.t("loading_model"), ctx.lang());
 
     let detector;
     try {
@@ -191,9 +195,11 @@ export function createPage(ctx) {
       setError("model_failed");
       return;
     }
+    detectorLoaded = true;
     if (my !== run) return;
     gate = new AlertGate();
     lastDetect = 0;
+    if (voiceOn) ctx.speaker.say(ctx.t("netra_started"), ctx.lang());
     loop(my, detector);
   }
 
@@ -202,6 +208,8 @@ export function createPage(ctx) {
     run++;
     running = false;
     cancelAnimationFrame(raf);
+    wake?.release();
+    wake = null;
     stopStream(stream);
     stream = null;
     video.srcObject = null;

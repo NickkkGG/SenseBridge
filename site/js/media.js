@@ -55,3 +55,34 @@ export function openMic() {
     video: false,
   });
 }
+
+// Keeps the screen on while a page runs (camera or captions in use), asking
+// again whenever the page comes back into view. Does nothing where the
+// browser has no screen wake lock.
+export function keepScreenOn(nav, doc) {
+  let active = true;
+  let lock = null;
+  const request = async () => {
+    if (!active || doc.visibilityState !== "visible" || !nav.wakeLock) return;
+    try {
+      const got = await nav.wakeLock.request("screen");
+      if (active) lock = got;
+      else got.release().catch(() => {});   // released while we were waiting
+    } catch {
+      // Refused (battery saver, not visible): the screen may sleep.
+    }
+  };
+  const onVisibility = () => {
+    if (doc.visibilityState === "visible") request();
+  };
+  doc.addEventListener("visibilitychange", onVisibility);
+  request();
+  return {
+    release() {
+      active = false;
+      doc.removeEventListener("visibilitychange", onVisibility);
+      lock?.release().catch(() => {});
+      lock = null;
+    },
+  };
+}

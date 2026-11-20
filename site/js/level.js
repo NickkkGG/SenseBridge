@@ -37,3 +37,11 @@ export class LoudAlert {
     return false;
   }
 }
+
+// Analyser window and sampling interval for the level meter: a window of
+// about 100 ms (Farid's listener blocks) read once per window, so every
+// sample is checked and short bangs are not missed.
+export function meterTiming(sampleRate) {
+  const fftSize = Math.min(32768, Math.max(32, 2 ** Math.floor(Math.log2(sampleRate * 0.1))));
+  return { fftSize, intervalMs: Math.floor((fftSize / sampleRate) * 1000) };
+}

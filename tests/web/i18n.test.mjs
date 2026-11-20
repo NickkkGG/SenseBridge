@@ -20,3 +20,7 @@ test("no emoji or pictographs in interface text", () => {
   const all = [...Object.values(STRINGS.id), ...Object.values(STRINGS.en)].join(" ");
   assert.doesNotMatch(all, /\p{Extended_Pictographic}/u);
 });
+test("the captions note names the speech service each browser really uses", () => {
+  assert.match(t("id", "rungu_note"), /Google di Chrome, Microsoft di Edge, Apple di Safari/);
+  assert.match(t("en", "rungu_note"), /Google in Chrome, Microsoft in Edge, Apple in Safari/);
+});

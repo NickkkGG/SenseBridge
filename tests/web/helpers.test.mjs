@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loadSettings, saveSetting } from "../../site/js/settings.js";
-import { shouldMirror, mediaErrorKey } from "../../site/js/media.js";
+import { shouldMirror, mediaErrorKey, keepScreenOn } from "../../site/js/media.js";
 import { undoWord } from "../../site/js/compose.js";
 
 const blocked = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } };
@@ -36,4 +36,41 @@ test("undo removes the last word like the desktop app", () => {
   assert.equal(undoWord("halo apa kabar "), "halo apa ");
   assert.equal(undoWord("halo"), "");
   assert.equal(undoWord("   "), "");
+});
+
+function wakeEnv({ supported = true } = {}) {
+  const env = { requests: 0, released: 0, listeners: {}, visibilityState: "visible" };
+  env.doc = {
+    get visibilityState() { return env.visibilityState; },
+    addEventListener: (type, fn) => { env.listeners[type] = fn; },
+    removeEventListener: (type) => { delete env.listeners[type]; },
+  };
+  env.nav = supported
+    ? { wakeLock: { request: async () => { env.requests++; return { release: async () => { env.released++; } }; } } }
+    : {};
+  return env;
+}
+const flush = () => new Promise((r) => setTimeout(r, 0));
+
+test("the screen stays on while a page runs and may sleep after", async () => {
+  const env = wakeEnv(); const lock = keepScreenOn(env.nav, env.doc);
+  await flush();
+  assert.equal(env.requests, 1);
+  lock.release(); await flush();
+  assert.equal(env.released, 1);
+});
+test("the screen lock is asked for again when the page comes back into view", async () => {
+  const env = wakeEnv(); const lock = keepScreenOn(env.nav, env.doc); await flush();
+  env.visibilityState = "hidden"; env.listeners.visibilitychange();
+  env.visibilityState = "visible"; env.listeners.visibilitychange(); await flush();
+  assert.equal(env.requests, 2);
+  lock.release();
+});
+test("a screen lock that arrives after release is let go at once", async () => {
+  const env = wakeEnv(); const lock = keepScreenOn(env.nav, env.doc); lock.release(); await flush();
+  assert.equal(env.released, 1);
+});
+test("browsers without a screen lock still work", () => {
+  const env = wakeEnv({ supported: false });
+  assert.doesNotThrow(() => keepScreenOn(env.nav, env.doc).release());
 });
