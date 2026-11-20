@@ -98,6 +98,7 @@ button { cursor: pointer; }
 .note { margin: 1.4rem 0 0; padding: .15rem 0 .15rem 1rem; border-left: .35rem solid var(--text); font-size: 1rem; max-width: 40rem; }
 .status { margin: .7rem 0 0; font-weight: 700; min-height: 1.5em; }
 .status.bad { color: var(--bad); }
+.status:empty { min-height: 0; margin: 0; }
 
 /* options under the main button */
 .opts { margin-top: 1.2rem; border-top: 2px solid var(--text); }
@@ -114,7 +115,7 @@ button { cursor: pointer; }
 .netra-grid { display: grid; gap: 1rem; grid-template-areas: "board" "go" "view" "more"; }
 .netra-view { grid-area: view; }
 .netra-grid > .board { grid-area: board; }
-.netra-grid > .go { grid-area: go; }
+.netra-grid > .go-wrap { grid-area: go; }
 .netra-more { grid-area: more; }
 @media (min-width: 56rem) {
   .netra-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr; grid-template-areas: "view board" "view go" "view more"; column-gap: 1.5rem; align-items: start; }
