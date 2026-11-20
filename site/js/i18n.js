@@ -42,6 +42,7 @@ export const STRINGS = {
     saved: "Tersimpan",
     // web only
     about: "Tentang",
+    skip: "Langsung ke isi",
     home_title: "Pilih jalur",
     home_lede: "Satu indra masuk, indra lain keluar. Kamera dan mikrofon dipakai langsung di perangkat ini.",
     all_lines: "Semua jalur",
@@ -102,6 +103,7 @@ export const STRINGS = {
     model_none: "No model yet", need_word: "Pick or type a word first.",
     saved: "Saved",
     about: "About",
+    skip: "Skip to content",
     home_title: "Choose a line",
     home_lede: "One sense in, another sense out. The camera and microphone are used right here on this device.",
     all_lines: "All lines",
