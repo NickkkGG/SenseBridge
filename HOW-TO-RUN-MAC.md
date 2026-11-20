@@ -2,6 +2,13 @@
 
 Sudah disiapkan dan dites di MacBook Pro M1 Pro (macOS 27.2) dengan Python 3.12 (folder `.venv`) dan VSCode 1.146.
 
+## Versi web
+
+Tanpa Python: buka https://sensebridge-omega.vercel.app di Chrome, Edge, atau Safari (HP atau laptop), pilih jalur, lalu izinkan kamera atau mikrofon. Tuna Netra, Tuna Rungu, dan Tuna Wicara (ketik dan kalimat cepat) sudah jalan di browser. Baca bibir dan Latih Model masih lewat aplikasi Python di bawah.
+
+- Kodenya di `site/` (HTML, CSS, dan JavaScript biasa, tanpa build). Tesnya: `node --test "tests/web/*.test.mjs"`.
+- Upload versi baru: dari folder `site/`, jalankan `npx --yes vercel@latest deploy --prod --yes`, lalu hapus `site/.env.local` kalau file itu muncul (isinya token Vercel).
+
 ## Jalankan dari VSCode
 
 1. Buka VSCode, pilih **File → Open Folder…**, lalu pilih folder project ini.
@@ -74,7 +81,7 @@ Untuk semua OS:
 - `services.py`, mikrofon Tuna Rungu: isi `SpeechListener._run` sebelumnya ternyata salinan kode suara keluar, jadi tombol mikrofon tidak berbuat apa-apa (di Windows juga). Sekarang ditulis ulang memakai `sounddevice`: kalibrasi bising ruangan 1 detik, bar volume, peringatan suara keras, lalu ucapan dipotong per kalimat dan dikirim ke Google Speech lewat fungsi `_recognize` milik Farid. `pyaudio` tidak diperlukan lagi.
 - `main.py`: bar volume Tuna Rungu kembali ke 0 setelah tombol Berhenti ditekan, dan kotak LOG di Latih Model membungkus teks per kata.
 - `tests/`: tes otomatis untuk mikrofon dan pelatihan model, memakai mikrofon, Google, dan klip bibir palsu. Jalankan dari folder project dengan `.venv/bin/python -m unittest discover tests`. Perintah `python` saja hanya ada kalau venv sudah aktif (misalnya di terminal VSCode setelah folder project dibuka).
-- File baru lain: `README.md`, `requirements.txt`, `.gitignore`, `.vscode/settings.json`, `.vscode/launch.json`, `site/` (halaman proyek di Vercel), dan file ini.
+- File baru lain: `README.md`, `requirements.txt`, `.gitignore`, `.vscode/settings.json`, `.vscode/launch.json`, `site/` (versi web dan halaman proyek di Vercel), dan file ini.
 
 Kalau folder ini dikirim ke orang lain, **jangan ikutkan `.venv/`** (±1,6 GB dan khusus Mac). Di laptopnya cukup `pip install -r requirements.txt`.
 
